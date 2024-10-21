@@ -13,12 +13,15 @@ ASSISTANT_ID = os.getenv("OPENAI_ASSISTANT_ID")
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-# Update the Assistant to use a supported model
+# Update the Assistant to use a supported model and provide more personalized responses
 try:
     assistant = client.beta.assistants.update(
         assistant_id=ASSISTANT_ID,
-        model="gpt-4-turbo-preview",  # or "gpt-3.5-turbo-0125" if you prefer
-        instructions="You are an AI parenting assistant. Provide concise and practical advice for parents."
+        model="gpt-4-turbo-preview",
+        instructions="""You are an AI parenting assistant. Provide concise, practical, and personalized advice for parents.
+        Consider the context of previous messages in the conversation to tailor your responses.
+        Use the information provided about the child's age, specific issues, and parenting style to give more targeted advice.
+        Be empathetic and supportive in your responses."""
     )
 except Exception as e:
     st.error(f"Error updating assistant: {str(e)}")
@@ -71,6 +74,17 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
+# User information input
+if "user_info" not in st.session_state:
+    st.session_state.user_info = {}
+
+st.session_state.user_info["child_age"] = st.text_input("孩子的年龄", key="child_age")
+st.session_state.user_info["parenting_style"] = st.selectbox(
+    "您的育儿风格",
+    ("权威型", "民主型", "放任型", "忽视型"),
+    key="parenting_style"
+)
+
 # Question type selection
 question_type = st.selectbox(
     "选择问题类型",
@@ -99,10 +113,16 @@ if user_input:
         st.markdown(user_input)
     
     # Generate AI response
-    prompt = f"问题类型: {question_type}\n"
+    prompt = f"""
+    用户信息:
+    孩子年龄: {st.session_state.user_info['child_age']}
+    育儿风格: {st.session_state.user_info['parenting_style']}
+    
+    问题类型: {question_type}
+    """
     if parenting_subcategory:
         prompt += f"具体问题: {parenting_subcategory}\n"
-    prompt += f"问题: {user_input}\n\n请提供简洁实用的育儿建议。"
+    prompt += f"问题: {user_input}\n\n请根据用户信息和之前的对话历史提供个性化的、简洁实用的育儿建议。"
     
     ai_response = generate_ai_response(prompt)
     
