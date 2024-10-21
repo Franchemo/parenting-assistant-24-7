@@ -13,6 +13,17 @@ ASSISTANT_ID = os.getenv("OPENAI_ASSISTANT_ID")
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+# Update the Assistant to use a supported model
+try:
+    assistant = client.beta.assistants.update(
+        assistant_id=ASSISTANT_ID,
+        model="gpt-4-turbo-preview",  # or "gpt-3.5-turbo-0125" if you prefer
+        instructions="You are an AI parenting assistant. Provide concise and practical advice for parents."
+    )
+except Exception as e:
+    st.error(f"Error updating assistant: {str(e)}")
+    st.stop()
+
 st.set_page_config(page_title="AI育儿助手", page_icon="👶", layout="wide")
 
 st.title("AI育儿助手")
