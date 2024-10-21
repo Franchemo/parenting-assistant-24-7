@@ -40,11 +40,13 @@ def generate_ai_response(prompt):
         )
 
         # Wait for the run to complete
-        while run.status != "completed":
+        while run.status not in ["completed", "failed"]:
             run = client.beta.threads.runs.retrieve(
                 thread_id=st.session_state.thread_id,
                 run_id=run.id
             )
+            if run.status == "failed":
+                return "抱歉，AI助手无法生成回答。请稍后再试。"
 
         # Retrieve the assistant's response
         messages = client.beta.threads.messages.list(thread_id=st.session_state.thread_id)
@@ -104,4 +106,4 @@ if user_input:
 if st.button("清空对话"):
     st.session_state.messages = []
     st.session_state.thread_id = client.beta.threads.create().id
-    st.experimental_rerun()
+    st.rerun()
