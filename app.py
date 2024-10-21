@@ -13,6 +13,49 @@ ASSISTANT_ID = os.getenv("OPENAI_ASSISTANT_ID")
 # Initialize OpenAI client
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+# Custom CSS to improve the app's appearance
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #f0f8ff;
+    }
+    .stTextInput > div > div > input {
+        background-color: #ffffff;
+    }
+    .stSelectbox > div > div > select {
+        background-color: #ffffff;
+    }
+    .stButton > button {
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 5px;
+    }
+    .stButton > button:hover {
+        background-color: #45a049;
+    }
+    .chat-message {
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-message.user {
+        background-color: #2b313e;
+        color: #ffffff;
+        align-self: flex-end;
+    }
+    .chat-message.assistant {
+        background-color: #ffffff;
+        color: #000000;
+        align-self: flex-start;
+    }
+    .chat-message .message {
+        margin-bottom: 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Update the Assistant to use a supported model and provide more personalized responses
 try:
     assistant = client.beta.assistants.update(
@@ -29,8 +72,10 @@ except Exception as e:
 
 st.set_page_config(page_title="AI育儿助手", page_icon="👶", layout="wide")
 
-st.title("AI育儿助手")
-st.subheader("获取实时育儿建议，提升您的育儿决策效率")
+col1, col2, col3 = st.columns([1,2,1])
+with col2:
+    st.title("🤖 AI育儿助手")
+    st.subheader("获取实时育儿建议，提升您的育儿决策效率")
 
 # Initialize chat history and thread
 if "messages" not in st.session_state:
@@ -69,25 +114,23 @@ def generate_ai_response(prompt):
     except Exception as e:
         return f"抱歉，生成回答时出现了错误: {str(e)}"
 
-# Display chat messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
 # User information input
 if "user_info" not in st.session_state:
     st.session_state.user_info = {}
 
-st.session_state.user_info["child_age"] = st.text_input("孩子的年龄", key="child_age")
-st.session_state.user_info["parenting_style"] = st.selectbox(
-    "您的育儿风格",
-    ("权威型", "民主型", "放任型", "忽视型"),
-    key="parenting_style"
-)
+col1, col2 = st.columns(2)
+with col1:
+    st.session_state.user_info["child_age"] = st.text_input("👶 孩子的年龄", key="child_age")
+with col2:
+    st.session_state.user_info["parenting_style"] = st.selectbox(
+        "🏠 您的育儿风格",
+        ("权威型", "民主型", "放任型", "忽视型"),
+        key="parenting_style"
+    )
 
 # Question type selection
 question_type = st.selectbox(
-    "选择问题类型",
+    "❓ 选择问题类型",
     ("育儿问题", "健康问题", "行为管理"),
     key="question_type"
 )
@@ -96,10 +139,15 @@ question_type = st.selectbox(
 parenting_subcategory = None
 if question_type == "育儿问题":
     parenting_subcategory = st.selectbox(
-        "选择具体的育儿问题类型",
+        "📚 选择具体的育儿问题类型",
         ("睡眠", "饮食", "早教", "其他"),
         key="parenting_subcategory"
     )
+
+# Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(f'<div class="chat-message {message["role"]}"><p class="message">{message["content"]}</p></div>', unsafe_allow_html=True)
 
 # User input
 user_input = st.chat_input("输入您的育儿问题，获得实时建议")
@@ -110,7 +158,7 @@ if user_input:
     
     # Display user message
     with st.chat_message("user"):
-        st.markdown(user_input)
+        st.markdown(f'<div class="chat-message user"><p class="message">{user_input}</p></div>', unsafe_allow_html=True)
     
     # Generate AI response
     prompt = f"""
@@ -124,17 +172,13 @@ if user_input:
         prompt += f"具体问题: {parenting_subcategory}\n"
     prompt += f"问题: {user_input}\n\n请根据用户信息和之前的对话历史提供个性化的、简洁实用的育儿建议。"
     
-    ai_response = generate_ai_response(prompt)
+    with st.spinner('AI助手正在思考中...'):
+        ai_response = generate_ai_response(prompt)
     
     # Add AI response to chat history
     st.session_state.messages.append({"role": "assistant", "content": ai_response})
     
     # Display AI response
     with st.chat_message("assistant"):
-        st.markdown(ai_response)
+        st.markdown(f'<div class="chat-message assistant"><p class="message">{ai_response}</p></div>', unsafe_allow_html=True)
 
-# Clear chat button
-if st.button("清空对话"):
-    st.session_state.messages = []
-    st.session_state.thread_id = client.beta.threads.create().id
-    st.rerun()
