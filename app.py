@@ -132,7 +132,7 @@ try:
         assistant_id=ASSISTANT_ID,
         model="gpt-4-turbo-preview",
         instructions=f"""You are an AI parenting assistant. Provide concise, practical, and personalized advice for parents.
-        Respond in {st.session_state.language_select}.
+        Respond in {st.session_state.lang_select}.
         Consider the context of previous messages in the conversation to tailor your responses.
         Use the information provided about the child's age, personality, family situation, and other details to give highly targeted advice.
         Be empathetic and supportive in your responses."""
